@@ -4,6 +4,9 @@
 ## In this file, I create a class titled "SparkDataCheck", which will take in either a pandas df or a csv and produce a new object with that data frame as an attribute.
 ## This script also features a variety of methods to be used on this data.
 
+import numpy as np
+import pandas as pd
+import math
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql.types import *
@@ -46,7 +49,7 @@ class SparkDataCheck :
         ## Check if any limits were supplied
 
         if lower == float('nan') and upper == float('nan'):
-            raise ValueError('withinlimits: no limits supplied')
+            raise ValueError('withinlimits: no limits supplied - No actions taken')
             return self
 
         ## Create our booleans to see if supplied limits are in an acceptable format
@@ -62,23 +65,23 @@ class SparkDataCheck :
         ## Testing our booleans from above
 
         if haslow == False and hasup == False:
-            raise ValueError('withinlimits: no limits supplied')
+            raise ValueError('withinlimits: no valid limits supplied - No actions taken')
             return self
 
         if typecheck == False:
-            print ("Non-numeric column supplied")
+            print ("Non-numeric column supplied - No actions taken")
             return self
 
         ## Running our actual method, testing column values based on supplied limits
 
         if haslow and hasup:
-            self.df = self.df.withColumn("Within", self.df[colname].between(lower, upper))
+            self.df = self.df.withColumn(colname + " within (" + str(lower) + "," + str(upper) + ")", self.df[colname].between(lower, upper))
 
         elif hasup:
-            self.df = self.df.withColumn("Below", self.df[colname] <= upper)
+            self.df = self.df.withColumn(colname + " below " + str(upper), self.df[colname] <= upper)
 
         elif haslow:
-            self.df = self.df.withColumn("Above", self.df[colname] >= lower)
+            self.df = self.df.withColumn(colname + " above "+ str(lower), self.df[colname] >= lower)
 
         return self
 
@@ -88,21 +91,28 @@ class SparkDataCheck :
         """
         Checks if string values appear on a given list
         """
-
+        
+        ## Have to check that 'levels' is either a string 
+        
+        levelscheck = isinstance(levels, StringType) or all(isinstance(x, str) for x in levels)
+        if levelscheck == False:
+            print ("Non-string list supplied - No actions taken")
+            return self
+        
         ## Pulling data from supplied column
 
         field = self.df.schema[colname]
         typecheck = isinstance(field.dataType, StringType)
-
+        
         ## Quick test for proper data type
 
         if typecheck == False:
-            print ("Non-string column supplied")
+            print ("Non-string column supplied - No actions taken")
             return self
 
         ## Testing to see if column values are on the "levels" list, and appending boolean column
 
-        self.df = self.df.withColumn("onlist", self.df[colname].isin(levels))
+        self.df = self.df.withColumn(colname + " on list", self.df[colname].isin(levels))
 
         return self
 
@@ -115,7 +125,7 @@ class SparkDataCheck :
         
         ## Testing if cells are "NULL"
 
-        self.df = self.df.withColumn("nulltest", self.df[colname].isNull())
+        self.df = self.df.withColumn(colname +" is null", self.df[colname].isNull())
 
         return self
 
@@ -152,7 +162,7 @@ class SparkDataCheck :
             ## Testing column data type
             
             if typecheck == False:
-                print ("Non-numeric column supplied")
+                print ("Non-numeric column supplied - No actions taken")
                 return self
             
             ## If we have a grouping variable:
@@ -186,7 +196,6 @@ class SparkDataCheck :
                     
                     ## If a grouping variable is specified:
                     ## t checks if its our first time through, and adds the column for the groupvar
-
                     
                     if groupsupp:
                         
@@ -205,7 +214,9 @@ class SparkDataCheck :
                     old = pd.concat([old, new], axis = 1)
                     t+=1
                 
-            return old
+            ## Here, I am transposing the pandas df to be more readable.
+            
+            return old.T
                     
     ## Counting String Occurrences ##        
             
@@ -224,7 +235,7 @@ class SparkDataCheck :
         
         if typecheck == False:
             
-            print ("Non-string first column supplied")
+            print ("Non-string first column supplied - No actions taken")
             
             return self
         
@@ -239,7 +250,7 @@ class SparkDataCheck :
             
             if typecheck2 == False:
                 
-                print ("Non-string second column supplied")
+                print ("Non-string second column supplied - No actions taken")
                 
                 return self
             
