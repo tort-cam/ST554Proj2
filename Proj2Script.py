@@ -37,7 +37,7 @@ class SparkDataCheck :
     def frompdf(cls, pdf, spark):
         
         """Creates a Spark DF from a pandas DF"""
-        p = spark.CreateDataFrame(pdf)
+        p = spark.createDataFrame(pdf)
         return cls(p)
     
 #### VALIDATION METHODS ####
