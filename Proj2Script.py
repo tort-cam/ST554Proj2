@@ -12,6 +12,9 @@ from pyspark.sql import functions as F
 from pyspark.sql.types import *
 from pyspark.sql.types import NumericType
 
+
+## Let's get started! Class defined:
+
 class SparkDataCheck :
     def __init__(self, df):
         self.df = df
@@ -19,6 +22,7 @@ class SparkDataCheck :
 ## You can create a SparkDataCheck object using a CSV or a Pandas DF
 
 ## First is from a CSV:
+
     @classmethod
     def fromcsv(cls, fileaddress, spark):
         
@@ -33,6 +37,7 @@ class SparkDataCheck :
         return cls(s)
 
 ## Next is from a Pandas DF:
+
     @classmethod
     def frompdf(cls, pdf, spark):
         
@@ -42,11 +47,15 @@ class SparkDataCheck :
     
 #### VALIDATION METHODS ####
 
+## withinlimits ##
+
+## withinlimits will take a SparkDataCheck obj, an included column name, and one or both bounds.
+
     def withinlimits(self, colname, lower = float('nan'), upper = float('nan')):
         """
-        Checks if values in a specified column are within the supplied limits
+        Checks if values in a specified column are within the supplied numeric limits
         """
-        ## Check if any limits were supplied
+        ## Check if any bounds were supplied
 
         if lower == float('nan') and upper == float('nan'):
             raise ValueError('withinlimits: no limits supplied - No actions taken')
@@ -62,7 +71,7 @@ class SparkDataCheck :
         field = self.df.schema[colname]
         typecheck = isinstance(field.dataType, NumericType)
 
-        ## Testing our booleans from above
+        ## Testing our booleans from above - Need proper format
 
         if haslow == False and hasup == False:
             raise ValueError('withinlimits: no valid limits supplied - No actions taken')
@@ -72,7 +81,8 @@ class SparkDataCheck :
             print ("Non-numeric column supplied - No actions taken")
             return self
 
-        ## Running our actual method, testing column values based on supplied limits
+        ## Running our actual method, version depends on earlier booleans:
+        ## Testing column values based on supplied limits
 
         if haslow and hasup:
             self.df = self.df.withColumn(colname + " within (" + str(lower) + "," + str(upper) + ")", self.df[colname].between(lower, upper))
@@ -85,14 +95,16 @@ class SparkDataCheck :
 
         return self
 
-    ## Check String List ##
+    ## onlist ##
+    
+    ## onlist will take a SparkDataCheck obj, an included (str-format) column name, and one (or a list of) strings. 
     
     def onlist(self, colname, levels):
         """
-        Checks if string values appear on a given list
+        Checks if string values in a given column appear on a given list
         """
         
-        ## Have to check that 'levels' is either a string 
+        ## Have to check that 'levels' is either a string or a list of strings
         
         levelscheck = isinstance(levels, StringType) or all(isinstance(x, str) for x in levels)
         if levelscheck == False:
@@ -104,7 +116,7 @@ class SparkDataCheck :
         field = self.df.schema[colname]
         typecheck = isinstance(field.dataType, StringType)
         
-        ## Quick test for proper data type
+        ## Quick test for proper column data type
 
         if typecheck == False:
             print ("Non-string column supplied - No actions taken")
@@ -116,11 +128,13 @@ class SparkDataCheck :
 
         return self
 
-    ## Test if Null ##
+    ## nulltest ##
+    
+    ## nulltest takes the same kind of obj as above and a column name, and returns a "null or not" column
     
     def nulltest(self, colname):
         """
-        Marks rows with a NULL value
+        Marks rows containing a NULL value
         """
         
         ## Testing if cells are "NULL"
@@ -229,7 +243,7 @@ class SparkDataCheck :
         c2supp = not colname2 is None
         field = self.df.schema[colname]
                 
-        ## Quick tests for proper data type
+        ## Quick tests for proper data type (First column)
 
         typecheck = isinstance(field.dataType, StringType)
         
@@ -247,6 +261,8 @@ class SparkDataCheck :
             
             field2 = self.df.schema[colname2]
             typecheck2 = isinstance(field2.dataType, StringType)
+            
+            ## If it isnt:
             
             if typecheck2 == False:
                 
@@ -267,4 +283,4 @@ class SparkDataCheck :
         return f
     
     
-## Tadaa ##
+## Ta-da ##
